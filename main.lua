@@ -6,7 +6,8 @@
 -- rof_timer is used internally as a timer that triggers when it is at 0
 -- shot_queue contains world positions where a shot has hit and needs to be exploded
 -- explosion_size is self expanatory, should be in the range of [0.5, 4.0]
--- shot_has_exploded is a boolean that represents whether the current shot has exploded
+-- shot_has_exploded is a bool, whether the current shot has exploded
+-- build_up_started is a bool, whether the build up sound has started
 
 --queue definition
 Queue = {}
@@ -50,11 +51,12 @@ function init()
 	SetBool("game.tool.scifi_gun.enabled", true)
 
 	--initialize vars
-	rof = 2
+	rof = 1
 	rof_timer = 0
 	shot_queue = Queue.new()
 	explosion_size = 2.0
 	shot_has_exploded = false
+	build_up_started = false
 end
 
 
@@ -71,10 +73,15 @@ function tick(dt)
 		end
 
 		--check to explode stuff
-		local half_rof = rof / 2
-		if Queue.length(shot_queue) > 0 and rof_timer < half_rof and not shot_has_exploded then
+		local time_to_explode = rof / 8
+		local time_to_buildup = rof / 1
+		if Queue.length(shot_queue) > 0 and rof_timer < time_to_explode and not shot_has_exploded then
 			explode_shot()
 			shot_has_exploded = true
+			build_up_started = false
+		elseif Queue.length(shot_queue) > 0 and rof_timer < time_to_buildup and not build_up_started then
+			PlaySound(buildup_sound)
+			build_up_started = true
 		end
 
 		--decrement timers
@@ -109,7 +116,6 @@ function shoot_sticky()
 end
 
 function explode_shot()
-	PlaySound(buildup_sound)
 	local hit_point = Queue.pop(shot_queue)
 	Explosion(hit_point, explosion_size)
 end
